@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SOC Analyst Training Program</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --sidebar-bg: #161b22;
+      --header-bg: #21262d;
+      --border: #30363d;
+      --accent: #58a6ff;
+      --accent2: #3fb950;
+      --accent3: #f78166;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --hover: #1f2937;
+      --phase-colors: #58a6ff, #3fb950, #d2a8ff, #ffa657, #f78166, #79c0ff, #56d364, #e3b341;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .logo {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: #0d1117;
+    }
+    .header-title { font-size: 16px; font-weight: 600; color: var(--text); }
+    .header-subtitle { font-size: 12px; color: var(--text-dim); }
+    .progress-container { display: flex; align-items: center; gap: 12px; }
+    .progress-bar-wrap {
+      width: 200px; height: 6px;
+      background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #58a6ff, #3fb950);
+      border-radius: 3px; transition: width 0.4s ease;
+    }
+    .progress-text { font-size: 12px; color: var(--text-dim); white-space: nowrap; }
+    .badge {
+      background: var(--border); color: var(--text-dim);
+      padding: 2px 8px; border-radius: 12px; font-size: 11px;
+    }
+
+    /* ── LAYOUT ── */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    sidebar {
+      width: 280px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .sidebar-search {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-search input {
+      width: 100%; padding: 6px 10px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); font-size: 13px;
+      outline: none;
+    }
+    .sidebar-search input:focus { border-color: var(--accent); }
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .phase-group { margin-bottom: 4px; }
+    .phase-header {
+      display: flex; align-items: center; gap-: 8px;
+      padding: 8px 16px; cursor: pointer;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+      color: var(--text-dim); text-transform: uppercase;
+      transition: color 0.2s;
+      user-select: none;
+    }
+    .phase-header:hover { color: var(--text); }
+    .phase-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      margin-right: 8px; flex-shrink: 0;
+    }
+    .phase-chevron {
+      margin-left: auto; font-size: 10px;
+      transition: transform 0.2s;
+    }
+    .phase-group.collapsed .phase-chevron { transform: rotate(-90deg); }
+    .phase-group.collapsed .phase-lessons { display: none; }
+
+    .phase-lessons { padding: 0 0 4px 0; }
+    .lesson-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 16px 7px 32px;
+      cursor: pointer; font-size: 13px; color: var(--text-dim);
+      transition: all 0.15s; border-left: 2px solid transparent;
+      position: relative;
+    }
+    .lesson-item:hover { background: var(--hover); color: var(--text); }
+    .lesson-item.active {
+      color: var(--accent); background: rgba(88,166,255,0.1);
+      border-left-color: var(--accent);
+    }
+    .lesson-item.completed .lesson-icon { color: var(--accent2); }
+    .lesson-icon { font-size: 11px; flex-shrink: 0; width: 14px; text-align: center; }
+    .lesson-name { line-height: 1.3; flex: 1; }
+    .lesson-type {
+      font-size: 10px; padding: 1px 5px; border-radius: 3px;
+      background: var(--border); color: var(--text-dim); flex-shrink: 0;
+    }
+    .lesson-type.quiz { background: rgba(248,213,104,0.15); color: #f8d568; }
+    .lesson-type.exam { background: rgba(247,129,102,0.15); color: #f78166; }
+    .lesson-type.scenario { background: rgba(63,185,80,0.15); color: #3fb950; }
+
+    /* ── CONTENT ── */
+    .content-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .content-toolbar {
+      padding: 10px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+      background: var(--header-bg);
+      font-size: 13px; color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .breadcrumb-sep { color: var(--border); }
+    .breadcrumb-current { color: var(--text); }
+    .toolbar-right { margin-left: auto; display: flex; gap: 8px; }
+    .btn {
+      padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border);
+      background: var(--sidebar-bg); color: var(--text); font-size: 12px;
+      cursor: pointer; transition: all 0.15s; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+    .btn:hover { background: var(--hover); border-color: var(--accent); color: var(--accent); }
+    .btn.primary {
+      background: var(--accent); border-color: var(--accent); color: #0d1117; font-weight: 600;
+    }
+    .btn.primary:hover { background: #79c0ff; }
+
+    .lesson-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px;
+    }
+    .lesson-content::-webkit-scrollbar { width: 6px; }
+    .lesson-content::-webkit-scrollbar-track { background: transparent; }
+    .lesson-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── MARKDOWN STYLES ── */
+    .markdown-body {
+      max-width: 860px;
+      margin: 0 auto;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+    .markdown-body h1 {
+      font-size: 28px; font-weight: 700;
+      color: var(--text); margin-bottom: 8px;
+      padding-bottom: 12px; border-bottom: 2px solid var(--border);
+    }
+    .markdown-body h2 {
+      font-size: 20px; font-weight: 600;
+      color: var(--accent); margin: 36px 0 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .markdown-body h2::before {
+      content: ''; display: block; width: 3px; height: 20px;
+      background: var(--accent); border-radius: 2px;
+    }
+    .markdown-body h3 {
+      font-size: 16px; font-weight: 600;
+      color: var(--text); margin: 24px 0 10px;
+    }
+    .markdown-body p { margin-bottom: 14px; color: #cdd9e5; }
+    .markdown-body ul, .markdown-body ol {
+      margin: 10px 0 16px 24px; color: #cdd9e5;
+    }
+    .markdown-body li { margin-bottom: 6px; }
+    .markdown-body strong { color: var(--text); font-weight: 600; }
+    .markdown-body em { color: #d2a8ff; }
+    .markdown-body hr {
+      border: none; border-top: 1px solid var(--border); margin: 28px 0;
+    }
+    .markdown-body pre {
+      background: #161b22; border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px 20px;
+      overflow-x: auto; margin: 16px 0;
+      font-size: 13px; line-height: 1.6;
+    }
+    .markdown-body code:not(pre code) {
+      background: rgba(110,118,129,0.2);
+      border: 1px solid rgba(110,118,129,0.3);
+      border-radius: 4px; padding: 2px 6px;
+      font-size: 13px; color: #e6edf3;
+      font-family: 'SF Mono', Consolas, monospace;
+    }
+    .markdown-body blockquote {
+      border-left: 3px solid var(--accent);
+      margin: 16px 0; padding: 10px 16px;
+      background: rgba(88,166,255,0.05);
+      border-radius: 0 6px 6px 0;
+      color: var(--text-dim);
+    }
+    .markdown-body table {
+      width: 100%; border-collapse: collapse; margin: 16px 0;
+    }
+    .markdown-body th {
+      background: var(--sidebar-bg); color: var(--text);
+      padding: 10px 14px; text-align: left;
+      border: 1px solid var(--border); font-weight: 600;
+    }
+    .markdown-body td {
+      padding: 8px 14px; border: 1px solid var(--border); color: #cdd9e5;
+    }
+    .markdown-body tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+    .markdown-body a { color: var(--accent); text-decoration: none; }
+    .markdown-body a:hover { text-decoration: underline; }
+
+    /* ── LESSON META ── */
+    .lesson-meta {
+      display: flex; gap: 12px; margin: 16px 0 28px;
+      flex-wrap: wrap;
+    }
+    .meta-badge {
+      background: var(--sidebar-bg); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 12px;
+      font-size: 12px; color: var(--text-dim);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .meta-badge span { color: var(--text); }
+
+    /* ── NAVIGATION ── */
+    .lesson-nav {
+      border-top: 1px solid var(--border);
+      padding: 16px 40px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--header-bg); flex-shrink: 0;
+    }
+    .nav-hint { font-size: 11px; color: var(--text-dim); text-align: center; }
+
+    /* ── LOADING ── */
+    .loading {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; gap: 16px; color: var(--text-dim);
+    }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── WELCOME SCREEN ── */
+    .welcome {
+      max-width: 700px; margin: 60px auto; text-align: center; padding: 20px;
+    }
+    .welcome-logo {
+      width: 72px; height: 72px;
+      background: linear-gradient(135deg, #58a6ff, #3fb950);
+      border-radius: 18px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 24px;
+    }
+    .welcome h1 { font-size: 32px; margin-bottom: 12px; }
+    .welcome p { color: var(--text-dim); font-size: 16px; line-height: 1.7; margin-bottom: 12px; }
+    .welcome-stats {
+      display: flex; justify-content: center; gap: 32px; margin: 32px 0;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+    .welcome-start {
+      margin-top: 24px;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 28px; border-radius: 8px;
+      background: var(--accent); color: #0d1117;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      border: none; transition: all 0.2s;
+    }
+    .welcome-start:hover { background: #79c0ff; transform: translateY(-1px); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      sidebar { width: 240px; }
+      .lesson-content { padding: 20px; }
+      .lesson-nav { padding: 12px 20px; }
+      .progress-container { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="logo">S</div>
+    <div>
+      <div class="header-title">SOC Analyst Training Program</div>
+      <div class="header-subtitle">Tier 1 → Tier 2 · 8 Phases · 80-120 Hours</div>
+    </div>
+  </div>
+  <div class="progress-container">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 / 43 completed</div>
+    <span class="badge" id="levelBadge">Phase 1</span>
+  </div>
+</header>
+
+<!-- MAIN -->
+<div class="main-layout">
+
+  <!-- SIDEBAR -->
+  <sidebar>
+    <div class="sidebar-search">
+      <input type="text" placeholder="🔍  Search lessons..." id="searchInput" oninput="filterLessons(this.value)" />
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav"></nav>
+  </sidebar>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div class="content-toolbar" id="toolbar">
+      <span>SOC Training</span>
+    </div>
+    <div class="lesson-content" id="lessonContent">
+      <div class="welcome" id="welcomeScreen">
+        <div class="welcome-logo">🛡️</div>
+        <h1>SOC Analyst Training Program</h1>
+        <p>Complete beginner-to-professional training in cybersecurity and SOC operations.<br/>
+        Every concept builds on the previous one — start from Phase 1 and work your way through.</p>
+        <div class="welcome-stats">
+          <div class="stat"><div class="stat-num">8</div><div class="stat-label">Phases</div></div>
+          <div class="stat"><div class="stat-num">31</div><div class="stat-label">Lessons</div></div>
+          <div class="stat"><div class="stat-num">11</div><div class="stat-label">Scenarios</div></div>
+          <div class="stat"><div class="stat-num">177</div><div class="stat-label">Questions</div></div>
+          <div class="stat"><div class="stat-num">100+</div><div class="stat-label">Log Examples</div></div>
+        </div>
+        <button class="welcome-start" onclick="loadLesson(CURRICULUM[0].lessons[0])">
+          ▶ Start Phase 1 — Lesson 1
+        </button>
+      </div>
+    </div>
+    <div class="lesson-nav" id="lessonNav" style="display:none">
+      <button class="btn" id="prevBtn" onclick="navigate(-1)">← Previous</button>
+      <div class="nav-hint" id="navHint"></div>
+      <button class="btn primary" id="nextBtn" onclick="navigate(1)">Next →</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BASE = "https://raw.githubusercontent.com/TalBenDosa/IR-Tool-/81168713646a19ebcb353e7b556d94cc99a0d54e/SOC-Training-Program/";
+
+const PHASE_COLORS = [
+  "#58a6ff","#3fb950","#d2a8ff","#ffa657",
+  "#f78166","#79c0ff","#56d364","#e3b341"
+];
+
+const CURRICULUM = [
+  {
+    phase: "Phase 1", name: "Absolute Basics", color: PHASE_COLORS[0],
+    lessons: [
+      { name: "What Is a Computer?",        file: "Phase-1-Absolute-Basics/01-What-Is-A-Computer.md",           type: "lesson" },
+      { name: "What Is an Operating System?",file: "Phase-1-Absolute-Basics/02-What-Is-An-Operating-System.md",  type: "lesson" },
+      { name: "What Is a File and Process?", file: "Phase-1-Absolute-Basics/03-What-Is-A-File-And-Process.md",   type: "lesson" },
+      { name: "What Is the Internet?",       file: "Phase-1-Absolute-Basics/04-What-Is-The-Internet.md",         type: "lesson" },
+      { name: "What Is an IP Address?",      file: "Phase-1-Absolute-Basics/05-What-Is-An-IP-Address.md",        type: "lesson" },
+      { name: "What Is a Domain?",           file: "Phase-1-Absolute-Basics/06-What-Is-A-Domain.md",             type: "lesson" },
+      { name: "Phase 1 Quiz",                file: "Phase-1-Absolute-Basics/Quiz-Phase1.md",                     type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 2", name: "IT & Networking Foundations", color: PHASE_COLORS[1],
+    lessons: [
+      { name: "Windows Basics for SOC",      file: "Phase-2-IT-Networking-Foundations/01-Windows-Basics-For-SOC.md", type: "lesson" },
+      { name: "Linux Basics for SOC",        file: "Phase-2-IT-Networking-Foundations/02-Linux-Basics-For-SOC.md",   type: "lesson" },
+      { name: "What Is a Network?",          file: "Phase-2-IT-Networking-Foundations/03-What-Is-A-Network.md",      type: "lesson" },
+      { name: "IP Addresses, DNS & DHCP",    file: "Phase-2-IT-Networking-Foundations/04-IP-DNS-DHCP.md",            type: "lesson" },
+      { name: "Ports and Protocols Intro",   file: "Phase-2-IT-Networking-Foundations/05-Ports-And-Protocols-Intro.md", type: "lesson" },
+      { name: "Phase 2 Quiz",                file: "Phase-2-IT-Networking-Foundations/Quiz-Phase2.md",               type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 3", name: "Networking Deep Dive", color: PHASE_COLORS[2],
+    lessons: [
+      { name: "The OSI Model",               file: "Phase-3-Networking-Deep/01-OSI-Model.md",              type: "lesson" },
+      { name: "TCP/IP Basics",               file: "Phase-3-Networking-Deep/02-TCP-IP-Basics.md",          type: "lesson" },
+      { name: "How Data Moves",              file: "Phase-3-Networking-Deep/03-How-Data-Moves.md",         type: "lesson" },
+      { name: "NAT, Routing & Ports",        file: "Phase-3-Networking-Deep/04-NAT-Routing-Common-Ports.md", type: "lesson" },
+      { name: "Phase 3 Quiz",                file: "Phase-3-Networking-Deep/Quiz-Phase3.md",               type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 4", name: "Protocols — Deep Dive", color: PHASE_COLORS[3],
+    lessons: [
+      { name: "DNS — Deep Dive",             file: "Phase-4-Protocols/01-DNS-Deep.md",             type: "lesson" },
+      { name: "HTTP and HTTPS",              file: "Phase-4-Protocols/02-HTTP-HTTPS-Deep.md",       type: "lesson" },
+      { name: "SMB, SSH, RDP, FTP",          file: "Phase-4-Protocols/03-SMB-SSH-RDP-FTP.md",      type: "lesson" },
+      { name: "Kerberos and NTLM",           file: "Phase-4-Protocols/04-Kerberos-NTLM-Deep.md",   type: "lesson" },
+      { name: "SMTP, DKIM, SPF, DMARC",      file: "Phase-4-Protocols/05-SMTP-DKIM-SPF-DMARC.md", type: "lesson" },
+      { name: "Phase 4 Quiz",                file: "Phase-4-Protocols/Quiz-Phase4.md",             type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 5", name: "Cybersecurity Introduction", color: PHASE_COLORS[4],
+    lessons: [
+      { name: "What Is a Cyber Attack?",     file: "Phase-5-Cybersecurity-Intro/01-What-Is-A-Cyber-Attack.md", type: "lesson" },
+      { name: "Malware and Phishing",        file: "Phase-5-Cybersecurity-Intro/02-Malware-And-Phishing.md",   type: "lesson" },
+      { name: "What Attackers Actually Do",  file: "Phase-5-Cybersecurity-Intro/03-What-Attackers-Do.md",      type: "lesson" },
+      { name: "Phase 5 Quiz",                file: "Phase-5-Cybersecurity-Intro/Quiz-Phase5.md",              type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 6", name: "SOC Introduction", color: PHASE_COLORS[5],
+    lessons: [
+      { name: "What Is a SOC?",              file: "Phase-6-SOC-Introduction/01-What-Is-A-SOC.md", type: "lesson" },
+      { name: "Phase 6 Quiz",                file: "Phase-6-SOC-Introduction/Quiz-Phase6.md",      type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 7", name: "Analyst Thinking", color: PHASE_COLORS[6],
+    lessons: [
+      { name: "How Analysts Think",          file: "Phase-7-Analyst-Thinking/01-How-Analysts-Think.md", type: "lesson" },
+      { name: "Phase 7 Quiz",                file: "Phase-7-Analyst-Thinking/Quiz-Phase7.md",           type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Phase 8", name: "Log Reading & Analysis", color: PHASE_COLORS[7],
+    lessons: [
+      { name: "What Is a Log?",              file: "Phase-8-Log-Reading/01-What-Is-A-Log.md",              type: "lesson" },
+      { name: "Windows Security Event Logs", file: "Phase-8-Log-Reading/02-Windows-Security-Event-Logs.md", type: "lesson" },
+      { name: "Office 365 & Azure AD Logs",  file: "Phase-8-Log-Reading/03-Office365-Azure-Logs.md",        type: "lesson" },
+      { name: "EDR, Firewall, DNS & Proxy",  file: "Phase-8-Log-Reading/04-EDR-Firewall-DNS-Proxy-Logs.md", type: "lesson" },
+      { name: "Phase 8 Quiz",                file: "Phase-8-Log-Reading/Quiz-Phase8.md",                   type: "quiz"   },
+    ]
+  },
+  {
+    phase: "Scenarios", name: "Investigation Labs", color: "#e3b341",
+    lessons: [
+      { name: "Level 1 — Simple Scenarios",  file: "Scenarios/Level1-Simple-Scenarios.md",    type: "scenario" },
+      { name: "Level 2 — Multi-Log",         file: "Scenarios/Level2-Multi-Log-Scenarios.md", type: "scenario" },
+      { name: "Level 3 — Full Attack Chain", file: "Scenarios/Level3-Multi-Step-Attack.md",   type: "scenario" },
+      { name: "Level 4 — SOC Simulation",    file: "Scenarios/Level4-Full-SOC-Simulation.md", type: "scenario" },
+    ]
+  },
+  {
+    phase: "Final Exam", name: "Assessment", color: "#f78166",
+    lessons: [
+      { name: "Final Exam (40 Questions)",   file: "Assessments/FINAL-EXAM.md", type: "exam" },
+    ]
+  },
+];
+
+// Flat list of all lessons for navigation
+const ALL_LESSONS = CURRICULUM.flatMap(g => g.lessons);
+let currentIndex = -1;
+let completed = new Set(JSON.parse(localStorage.getItem('soc_completed') || '[]'));
+
+function saveCompleted() {
+  localStorage.setItem('soc_completed', JSON.stringify([...completed]));
+}
+
+// ── BUILD SIDEBAR ──
+function buildSidebar() {
+  const nav = document.getElementById('sidebarNav');
+  nav.innerHTML = '';
+
+  CURRICULUM.forEach((group, gi) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'phase-group';
+    groupEl.dataset.gi = gi;
+
+    const phaseCompleted = group.lessons.filter(l => completed.has(l.file)).length;
+    const header = document.createElement('div');
+    header.className = 'phase-header';
+    header.innerHTML = `
+      <span class="phase-dot" style="background:${group.color}"></span>
+      <span>${group.phase} — ${group.name}</span>
+      <span style="margin-left:8px;font-size:10px;color:#8b949e">${phaseCompleted}/${group.lessons.length}</span>
+      <span class="phase-chevron">▼</span>
+    `;
+    header.onclick = () => groupEl.classList.toggle('collapsed');
+
+    const lessons = document.createElement('div');
+    lessons.className = 'phase-lessons';
+    group.lessons.forEach((lesson, li) => {
+      const flatIdx = ALL_LESSONS.indexOf(lesson);
+      const item = document.createElement('div');
+      item.className = 'lesson-item' +
+        (completed.has(lesson.file) ? ' completed' : '') +
+        (flatIdx === currentIndex ? ' active' : '');
+      item.dataset.idx = flatIdx;
+      item.dataset.file = lesson.file;
+
+      const icon = lesson.type === 'quiz' ? '📝' :
+                   lesson.type === 'exam' ? '🏆' :
+                   lesson.type === 'scenario' ? '🔬' : '📄';
+      const typeLabel = lesson.type !== 'lesson' ?
+        `<span class="lesson-type ${lesson.type}">${lesson.type}</span>` : '';
+
+      item.innerHTML = `
+        <span class="lesson-icon">${completed.has(lesson.file) ? '✅' : icon}</span>
+        <span class="lesson-name">${lesson.name}</span>
+        ${typeLabel}
+      `;
+      item.onclick = () => loadLesson(lesson);
+      lessons.appendChild(item);
+    });
+
+    groupEl.appendChild(header);
+    groupEl.appendChild(lessons);
+    nav.appendChild(groupEl);
+  });
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = ALL_LESSONS.length;
+  const done = ALL_LESSONS.filter(l => completed.has(l.file)).length;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} completed`;
+
+  // Find current phase
+  if (currentIndex >= 0) {
+    const lesson = ALL_LESSONS[currentIndex];
+    const group = CURRICULUM.find(g => g.lessons.includes(lesson));
+    if (group) document.getElementById('levelBadge').textContent = group.phase;
+  }
+}
+
+// ── LOAD LESSON ──
+async function loadLesson(lesson) {
+  currentIndex = ALL_LESSONS.indexOf(lesson);
+
+  // Show loading
+  document.getElementById('welcomeScreen') && (document.getElementById('welcomeScreen').style.display = 'none');
+  document.getElementById('lessonContent').innerHTML = `
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Loading lesson...</div>
+    </div>
+  `;
+  document.getElementById('lessonNav').style.display = 'flex';
+
+  try {
+    const res = await fetch(BASE + lesson.file);
+    if (!res.ok) throw new Error('Failed to load');
+    const md = await res.text();
+
+    const html = marked.parse(md);
+
+    const group = CURRICULUM.find(g => g.lessons.includes(lesson));
+    document.getElementById('lessonContent').innerHTML = `
+      <div class="markdown-body">${html}</div>
+    `;
+
+    // Highlight code blocks
+    document.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
+    // Update toolbar
+    document.getElementById('toolbar').innerHTML = `
+      <span style="color:#8b949e">${group?.phase}</span>
+      <span class="breadcrumb-sep">›</span>
+      <span class="breadcrumb-current">${lesson.name}</span>
+      <div class="toolbar-right">
+        <button class="btn" onclick="markComplete()">
+          ${completed.has(lesson.file) ? '✅ Completed' : '○ Mark Complete'}
+        </button>
+      </div>
+    `;
+
+    // Update nav
+    updateNavButtons();
+    buildSidebar();
+    document.getElementById('lessonContent').scrollTop = 0;
+
+  } catch(e) {
+    document.getElementById('lessonContent').innerHTML = `
+      <div class="loading"><div>❌ Failed to load lesson. Check your internet connection.</div></div>
+    `;
+  }
+}
+
+function markComplete() {
+  const lesson = ALL_LESSONS[currentIndex];
+  if (!lesson) return;
+  if (completed.has(lesson.file)) {
+    completed.delete(lesson.file);
+  } else {
+    completed.add(lesson.file);
+  }
+  saveCompleted();
+  buildSidebar();
+  loadLesson(lesson);
+}
+
+function updateNavButtons() {
+  const prev = document.getElementById('prevBtn');
+  const next = document.getElementById('nextBtn');
+  const hint = document.getElementById('navHint');
+
+  prev.disabled = currentIndex <= 0;
+  prev.style.opacity = currentIndex <= 0 ? '0.3' : '1';
+
+  const isLast = currentIndex >= ALL_LESSONS.length - 1;
+  next.textContent = isLast ? '🏁 Complete!' : 'Next →';
+  next.disabled = isLast;
+  next.style.opacity = isLast ? '0.3' : '1';
+
+  const total = ALL_LESSONS.length;
+  hint.textContent = `Lesson ${currentIndex + 1} of ${total}`;
+}
+
+function navigate(dir) {
+  const newIdx = currentIndex + dir;
+  if (newIdx >= 0 && newIdx < ALL_LESSONS.length) {
+    loadLesson(ALL_LESSONS[newIdx]);
+  }
+}
+
+function filterLessons(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('.lesson-item').forEach(el => {
+    const name = el.querySelector('.lesson-name').textContent.toLowerCase();
+    el.style.display = name.includes(q) ? '' : 'none';
+  });
+  document.querySelectorAll('.phase-group').forEach(g => {
+    const hasVisible = [...g.querySelectorAll('.lesson-item')].some(el => el.style.display !== 'none');
+    g.style.display = hasVisible ? '' : 'none';
+    if (q) g.classList.remove('collapsed');
+  });
+}
+
+// ── KEYBOARD NAVIGATION ──
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') navigate(1);
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') navigate(-1);
+});
+
+// ── INIT ──
+marked.setOptions({ breaks: true, gfm: true });
+buildSidebar();
+</script>
+</body>
+</html>
