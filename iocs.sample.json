@@ -1,0 +1,127 @@
+# ---------------------------------------------------------------
+#  Forensic Master-Analyzer - Admin launcher
+#  Snapshots locked registry hives (SYSTEM, NTUSER, Amcache) via
+#  `reg save` so the analyzer can parse Amcache / Shimcache /
+#  UserAssist, then runs the full analyzer.
+# ---------------------------------------------------------------
+
+$ErrorActionPreference = 'Stop'
+$script = Join-Path $PSScriptRoot 'forensic_master_analyzer.py'
+
+# Resolve the REAL Desktop folder (handles OneDrive-redirected
+# Known Folders — $env:USERPROFILE\Desktop often doesn't exist
+# when Desktop has been moved to OneDrive).
+$desktop = [Environment]::GetFolderPath('Desktop')
+$reportPath = Join-Path $desktop 'ForensicReport.html'
+
+$snapshotDir = Join-Path $env:TEMP ('FMA-snapshot-' +
+    (Get-Date -Format 'yyyyMMddHHmmss'))
+
+# --- Elevation check ------------------------------------------------
+$principal = [Security.Principal.WindowsPrincipal] `
+    [Security.Principal.WindowsIdentity]::GetCurrent()
+if (-not $principal.IsInRole(
+        [Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host ""
+    Write-Host "  This launcher needs administrator privileges." `
+        -ForegroundColor Yellow
+    Write-Host "  Re-launching elevated..."
+    Start-Process -FilePath 'powershell.exe' -ArgumentList `
+        @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+          "`"$PSCommandPath`"") -Verb RunAs
+    exit
+}
+
+# --- Python present? ------------------------------------------------
+try   { python --version *> $null }
+catch {
+    Write-Host "`n  [X] Python not on PATH. Install Python 3.9+ first." `
+        -ForegroundColor Red
+    Read-Host '  Press Enter to close' ; exit 1
+}
+
+# --- Snapshot locked hives ------------------------------------------
+New-Item -ItemType Directory -Path $snapshotDir -Force | Out-Null
+Write-Host "`n  Snapshot directory : $snapshotDir"
+
+Write-Host "  Snapshotting SYSTEM hive..."
+& reg save 'HKLM\SYSTEM' "$snapshotDir\SYSTEM" /y | Out-Null
+Write-Host "  Snapshotting NTUSER hive..."
+& reg save 'HKCU'        "$snapshotDir\NTUSER.DAT" /y | Out-Null
+
+# Amcache.hve is an actively-held JET / registry hive; Copy-Item
+# fails with a sharing violation. The documented workaround is
+# esentutl /y with /vss (Volume Shadow Copy) — copies the file
+# via the VSS provider regardless of the share lock.
+$amcacheSrc = 'C:\Windows\appcompat\Programs\Amcache.hve'
+$amcacheDst = Join-Path $snapshotDir 'Amcache.hve'
+if (Test-Path $amcacheSrc) {
+    Write-Host "  Copying Amcache (esentutl /y /vss)..."
+    $null = & esentutl.exe /y /vss $amcacheSrc /d $amcacheDst 2>&1
+    if (-not (Test-Path $amcacheDst)) {
+        # Fallback 1: esentutl without /vss (older Windows)
+        $null = & esentutl.exe /y $amcacheSrc /d $amcacheDst 2>&1
+    }
+    if (-not (Test-Path $amcacheDst)) {
+        # Fallback 2: robocopy with backup semantics
+        $null = & robocopy.exe (Split-Path $amcacheSrc) $snapshotDir `
+            (Split-Path $amcacheSrc -Leaf) /B /NFL /NDL /NJH /NJS /NP `
+            2>&1
+    }
+    if (Test-Path $amcacheDst) {
+        Write-Host "    -> $([math]::Round((Get-Item $amcacheDst).Length/1MB,1)) MB"
+    } else {
+        Write-Warning "  Could not snapshot Amcache.hve (all methods failed)."
+    }
+}
+
+# --- Run analyzer ---------------------------------------------------
+Write-Host "`n  Running Forensic Master-Analyzer...`n"
+$argList = @(
+    $script,
+    '--system-hive', "$snapshotDir\SYSTEM",
+    '--ntuser',      "$snapshotDir\NTUSER.DAT",
+    '--output',      $reportPath,
+    '--workdir',     (Join-Path $PSScriptRoot 'workdir'),
+    '--verbose'
+)
+if (Test-Path "$snapshotDir\Amcache.hve") {
+    $argList += @('--amcache', "$snapshotDir\Amcache.hve")
+}
+
+& python @argList
+$exit = $LASTEXITCODE
+
+# --- Cleanup snapshot -----------------------------------------------
+Write-Host "`n  Wiping snapshot directory..."
+Remove-Item -Path $snapshotDir -Recurse -Force -ErrorAction SilentlyContinue
+
+if ($exit -ne 0) {
+    Write-Host "`n  [X] Analysis failed (exit=$exit)" -ForegroundColor Red
+    Read-Host '  Press Enter to close' ; exit $exit
+}
+
+Write-Host "`n  [OK] Report: $reportPath" -ForegroundColor Green
+
+# Opening the report from an elevated shell can collide with a
+# non-elevated default handler (classic symptom: "Another instance
+# of Code is already running as administrator"). We try browsers
+# explicitly first, then fall back to explorer.exe which re-hosts
+# the shell-launch in the user's non-elevated session.
+$opened = $false
+foreach ($browser in @('msedge.exe', 'chrome.exe', 'firefox.exe',
+                         'brave.exe', 'iexplore.exe')) {
+    $found = Get-Command $browser -ErrorAction SilentlyContinue
+    if ($found) {
+        try {
+            Start-Process -FilePath $found.Source `
+                -ArgumentList "`"$reportPath`"" -ErrorAction Stop
+            $opened = $true ; break
+        } catch { continue }
+    }
+}
+if (-not $opened) {
+    # Last resort: explorer is always the logged-in user's process.
+    Start-Process explorer.exe $reportPath -ErrorAction SilentlyContinue
+}
+Read-Host '  Press Enter to close'

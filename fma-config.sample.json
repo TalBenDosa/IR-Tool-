@@ -1,0 +1,29 @@
+{
+  "_comment": "Operator-supplied threat-intel feed. Populate from your breach intel; the tool will cross-match every entry against every finding and emit Critical 'ioc.<kind>_match' findings for every hit. Delete this file or rename to iocs.json before using.",
+
+  "ips": [
+    "45.9.148.99",
+    "194.165.16.77"
+  ],
+
+  "domains": [
+    "c2.evil-actor.example",
+    "stealer.bad.tk"
+  ],
+
+  "hashes_sha256": [
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  ],
+
+  "hashes_md5": [
+    "d41d8cd98f00b204e9800998ecf8427e"
+  ],
+
+  "filenames": [
+    "stealer.exe",
+    "rc_stager.dll",
+    "nanodump.exe"
+  ],
+
+  "yara": []
+}
