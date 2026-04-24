@@ -1,0 +1,17 @@
+{
+  "markdown.preview.openMarkdownLinks": "inPreview",
+  "markdown.preview.fontSize": 16,
+  "markdown.preview.lineHeight": 1.8,
+  "markdown.preview.fontFamily": "Segoe UI, Arial, sans-serif",
+  "workbench.startupEditor": "none",
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "Quiz-*.md": "Quiz-${capture}.md"
+  },
+  "workbench.colorTheme": "Default Dark+",
+  "editor.wordWrap": "on",
+  "markdown.validate.enabled": true,
+  "files.associations": {
+    "*.md": "markdown"
+  }
+}
