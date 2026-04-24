@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "name": "SOC Analyst Training Program",
+      "path": "./SOC-Training-Program"
+    }
+  ],
+  "settings": {
+    "markdown.preview.fontSize": 16,
+    "markdown.preview.lineHeight": 1.8,
+    "editor.wordWrap": "on",
+    "workbench.colorTheme": "Default Dark+",
+    "explorer.sortOrder": "name"
+  },
+  "extensions": {
+    "recommendations": [
+      "yzhang.markdown-all-in-one",
+      "shd101wyy.markdown-preview-enhanced"
+    ]
+  }
+}
